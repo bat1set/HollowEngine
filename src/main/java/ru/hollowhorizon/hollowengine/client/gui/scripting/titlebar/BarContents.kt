@@ -1,5 +1,6 @@
 package ru.hollowhorizon.hollowengine.client.gui.scripting.titlebar
 
+import de.fabmax.kool.KeyValueStore
 import de.fabmax.kool.math.Vec2f
 import de.fabmax.kool.modules.ui2.*
 import net.minecraft.client.Minecraft
@@ -13,6 +14,7 @@ import ru.hollowhorizon.hollowengine.client.gui.scripting.popup.ItemPopupMenu
 import ru.hollowhorizon.hollowengine.client.gui.scripting.popup.SubMenuItem
 import ru.hollowhorizon.hollowengine.client.gui.scripting.theme.IdeTheme
 import ru.hollowhorizon.hollowengine.client.gui.scripting.tools.hoverColors
+import ru.hollowhorizon.hollowengine.common.scripting.core.completion.GlobalClassesIndex
 import ru.hollowhorizon.hollowengine.common.scripting.kool.KoolClientManager
 
 @SubscribeEvent
@@ -26,8 +28,28 @@ fun leftBarContents(event: TitleBarCreationEvent.Start) = event.append {
     TextButton("File") {
         overlay.hide()
         overlay.show(Vec2f(it.screenPosition), SubMenuItem {
+            item("Новый проект") {
+
+            }
+            item("Открыть проект") {
+
+            }
+            item("Экспортировать проект") {
+
+            }
+            item("Закрыть проект") {
+
+            }
+            divider()
             item("Перезагрузить ресурсы", "hollowengine:textures/gui/icons/reload_mc.png") {
                 Minecraft.getInstance().reloadResourcePacks()
+            }
+            item("Сбросить индексы") {
+                GlobalClassesIndex.reload()
+            }
+            divider()
+            item("Выход", "hollowengine:textures/gui/icons/exit.png") {
+                Minecraft.getInstance().screen?.onClose()
             }
         }, Unit)
     }
@@ -83,7 +105,7 @@ fun rightBarContents(event: TitleBarCreationEvent.End) = event.append {
             }
         }
     }
-    val itemIndex = remember(-1)
+    val itemIndex = remember { mutableStateOf(KeyValueStore.getInt("ide.file_index", -1)) }
 
     ComboBox.apply {
         comboBox("Empty", items.map { it.second }, itemIndex)
