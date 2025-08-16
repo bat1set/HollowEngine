@@ -11,6 +11,7 @@ import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.updateClasspath
+import kotlin.script.experimental.jvm.util.scriptCompilationClasspathFromContext
 
 open class HollowScriptConfiguration(body: Builder.() -> Unit = {}) : ScriptCompilationConfiguration({
     body()
@@ -50,3 +51,23 @@ open class HollowScriptConfiguration(body: Builder.() -> Unit = {}) : ScriptComp
 
     ide { acceptedLocations(ScriptAcceptedLocation.Everywhere) }
 })
+
+fun classpath(): List<File> {
+    val files = ArrayList<File>()
+
+    if(!isProduction) files += scriptCompilationClasspathFromContext(
+        classLoader = Thread.currentThread().contextClassLoader, wholeClasspath = true, unpackJarCollections = false
+    )
+
+    val jars = scriptingClasspath + deobfClasspath
+    val deobfNames = jars.map { it.name.replace("-deobf", "") }
+    val regex = Regex("""[/\\]versions[/\\][^/\\]+[/\\][^/\\]+\.jar$""")
+    val classPath = System.getProperty("java.class.path")
+        .split(File.pathSeparator)
+        .map(::File)
+        .filterNot { file -> regex.containsMatchIn(file.absolutePath) }
+        .toSet()
+    val filteredClasspath = classPath.filter { it.name !in deobfNames }
+    files += (jars + filteredClasspath)
+    return files
+}
