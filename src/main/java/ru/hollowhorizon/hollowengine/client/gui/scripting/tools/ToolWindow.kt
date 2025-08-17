@@ -5,6 +5,7 @@ import de.fabmax.kool.modules.ui2.*
 import de.fabmax.kool.modules.ui2.docking.DockNodeLeaf
 import de.fabmax.kool.modules.ui2.docking.Dockable
 import ru.hollowhorizon.hc.client.kool.minecraft.Image
+import ru.hollowhorizon.hollowengine.client.gui.scripting.IdeContent
 import ru.hollowhorizon.hollowengine.client.gui.scripting.docking.Layout
 import ru.hollowhorizon.hollowengine.client.gui.scripting.docking.LayoutLoader
 import ru.hollowhorizon.hollowengine.client.gui.scripting.docking.LayoutLoader.layoutOrder
@@ -16,13 +17,16 @@ fun UiScope.ToolBar(panel: DockPanel, isLeft: Boolean) = Column(height = Grow.St
     modifier.backgroundColor(colors.background)
     val dockNode = panel.dockable.dockedTo.use() ?: return@Column
     dockNode.dockedItems.sortedBy { layoutOrder.indexOf(it.name) }.forEach { dockable ->
-        panelButton(
-            dockable,
-            dockNode,
-            LayoutLoader.LAYOUTS[dockable.name]
-                ?: error("Panel ${dockable.name} not registered via LoadLayoutEvent!"),
-            isLeft
-        )
+        val layout = LayoutLoader.LAYOUTS[dockable.name] ?: IdeContent.files[dockable.name]
+
+        if (layout is DockPanel && layout.showOnToolbar) {
+            panelButton(
+                dockable,
+                dockNode,
+                layout,
+                isLeft
+            )
+        }
     }
 }
 

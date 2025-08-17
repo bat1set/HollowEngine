@@ -1,5 +1,6 @@
 package ru.hollowhorizon.hollowengine.client.gui.scripting
 
+import de.fabmax.kool.math.Vec2f
 import de.fabmax.kool.modules.ui2.DragAndDropContext
 import de.fabmax.kool.modules.ui2.docking.DockNode
 import net.minecraft.client.Minecraft
@@ -25,9 +26,16 @@ object IdeContent {
         val file = files.getOrPut(path) {
             val localFile = generator(path, bytes)
             dock.addDockableSurface(localFile.dockable, localFile.surface)
-            val fileLeaf = dock.getLeafAtPath("0/1")
-            if (fileLeaf != null) fileLeaf.dock(localFile.dockable)
-            else dock.getLeafAtPath("0")?.insertItem(localFile.dockable, DockNode.SlotPosition.Right)
+
+            val fileLeaf = dock.getLeafAtPath("0:col/0:row/1:leaf")
+
+            if (fileLeaf != null) {
+                fileLeaf.dock(localFile.dockable)
+            } else {
+                dock.root.getLeafNodeAt(Vec2f(dock.root.nodeWidthPx * 0.75f, dock.root.nodeHeightPx * 0.5f))
+                    ?.dock(localFile.dockable)
+                    ?: dock.getLeafAtPath("0")?.insertItem(localFile.dockable, DockNode.SlotPosition.Right)
+            }
             localFile
         }
         return file

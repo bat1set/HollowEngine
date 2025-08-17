@@ -12,6 +12,8 @@ import ru.hollowhorizon.hollowengine.client.gui.scripting.IdeContent
 class ImageFileData(name: String, path: String, var image: ByteArray) :
     FileData(name, path) {
 
+    constructor(path: String, image: ByteArray) : this(path.substringAfterLast('/'), path, image)
+
 
     override fun save() {
 

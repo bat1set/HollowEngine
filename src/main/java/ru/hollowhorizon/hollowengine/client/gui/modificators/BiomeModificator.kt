@@ -127,16 +127,39 @@ object BiomeModificator : KoolScreen() {
             modifier
                 .align(AlignmentX.Center, AlignmentY.Center)
                 .width(600.dp)
-                .height(Grow(1f, max = 800.dp))
-                .padding(vertical = sizes.largeGap)
-            Text("Модификатор биомов") {
-                modifier
-                    .alignX(AlignmentX.Center)
-                    .margin(bottom = sizes.gap)
-                    .padding(horizontal = sizes.largeGap)
-                    .font(MsdfFont(HACK_FONT, 24f))
+                .height(Grow(1f, max = 730.dp))
+                .background(RoundRectBackground(Color.BLACK.withAlpha(0.5f), 10.dp))
+
+            Row(width = Grow.Std) {
+                modifier.padding(bottom = sizes.largeGap)
+                Box(width = sizes.gap * 2f + sizes.smallGap * 2) {}
+
+                Text("Модификатор биомов") {
+                    modifier
+                        .width(Grow.Std)
+                        .alignY(AlignmentY.Center)
+                        .textAlignX(AlignmentX.Center)
+                        .font(MsdfFont(HACK_FONT, 24f))
+                }
+
+                CloseButton(
+                    background = Color.BLACK.withAlpha(0f),
+                    backgroundHover = Color.BLACK.withAlpha(0.2f),
+                    foreground = Color.WHITE.withAlpha(0.7f),
+                    foregroundHover = Color.RED
+                ) {
+                    modifier.alignY(AlignmentY.Center)
+                    // Логика закрытия окна
+                }
+
             }
-            ScrollArea(state = rememberScrollState()) {
+
+            ScrollArea(
+                state = rememberScrollState(),
+                containerModifier = {
+                    it.background(null)
+                }
+            ) {
                 modifier
                     .width(Grow.Std)
                     .padding(horizontal = sizes.largeGap)
@@ -146,9 +169,11 @@ object BiomeModificator : KoolScreen() {
                     Row(width = Grow.Std) {
                         modifier.margin(bottom = sizes.smallGap)
                         Checkbox(enable.use()) {
-                            modifier.margin(start = sizes.gap).onToggle {
-                                enable.set(!enable.value)
-                            }
+                            modifier.margin(start = sizes.gap)
+                                .alignY(AlignmentY.Center)
+                                .onToggle {
+                                    enable.set(!enable.value)
+                                }
                         }
                         Text("Включить модификатор биомов") {
                             modifier.margin(start = sizes.gap)
@@ -157,9 +182,11 @@ object BiomeModificator : KoolScreen() {
                     }
                     Row(width = Grow.Std) {
                         Checkbox(enableSkybox.use()) {
-                            modifier.margin(start = sizes.gap).onToggle {
-                                enableSkybox.set(!enableSkybox.value)
-                            }
+                            modifier.margin(start = sizes.gap)
+                                .alignY(AlignmentY.Center)
+                                .onToggle {
+                                    enableSkybox.set(!enableSkybox.value)
+                                }
                         }
                         Text("Включить скайбокс") {
                             modifier.margin(start = sizes.gap)

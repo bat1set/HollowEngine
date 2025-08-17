@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft
 import ru.hollowhorizon.hc.client.kool.minecraft.Image
 import ru.hollowhorizon.hc.common.network.request
 import ru.hollowhorizon.hollowengine.client.gui.scripting.files.IconHelper
+import ru.hollowhorizon.hollowengine.client.gui.scripting.files.ImageFileData
 import ru.hollowhorizon.hollowengine.client.gui.scripting.files.TextFileData
 import ru.hollowhorizon.hollowengine.client.gui.scripting.theme.IdeTheme
 import ru.hollowhorizon.hollowengine.client.gui.scripting.tools.hoverColors
@@ -105,14 +106,20 @@ open class FileNode(val treeName: String, val treePath: String) : Composable {
                         item.toggleExpanded()
                     } else {
                         val screen = Minecraft.getInstance().screen as? ScriptingEnvironmentScreen ?: return@onClick
-                        val file = IdeContent.files[item.treePath]
+                        val path = item.treePath
+                        val extension = path.substringAfterLast('.')
 
-                        if (file == null) IdeContent.openFile(
-                            item.treePath,
-                            item.treePath.fromReadablePath().readBytes(),
-                            ::TextFileData
-                        )
-                        else screen.dock.getLeafAtPath("0/1")?.bringToTop(file.dockable)
+                        val file = IdeContent.files[path]
+                        if (file != null) {
+                            screen.dock.getLeafAtPath("0:col/0:row/1:leaf")?.bringToTop(file.dockable)
+                            return@onClick
+                        }
+
+                        val bytes = path.fromReadablePath().readBytes()
+                        when (extension) {
+                            "png", "jpg", "jpeg", "gif" -> IdeContent.openFile(path, bytes, ::ImageFileData)
+                            else -> IdeContent.openFile(path, bytes, ::TextFileData)
+                        }
                     }
                 }
             }
