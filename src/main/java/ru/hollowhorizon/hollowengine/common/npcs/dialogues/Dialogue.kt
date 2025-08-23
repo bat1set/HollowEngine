@@ -66,7 +66,7 @@ class DialogueUpdateEvent(val tag: @Serializable(ForCompoundNBT::class) Compound
 }
 
 
-fun StateNode.dialogue(vararg player: ServerPlayer, action: suspend Dialogue.() -> Unit) {
+suspend fun StateNode.dialogue(vararg player: ServerPlayer, action: suspend Dialogue.() -> Unit) {
     val dialogue = Dialogue(this, *player)
 
     state("main") {

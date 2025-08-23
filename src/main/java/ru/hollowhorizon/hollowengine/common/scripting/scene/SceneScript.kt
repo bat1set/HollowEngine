@@ -24,7 +24,6 @@ abstract class SceneScript {
         stateMachine.initializer = body
     }
 
-
     open fun save(tag: CompoundTag) {}
     open fun load(tag: CompoundTag) {}
 

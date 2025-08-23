@@ -62,7 +62,7 @@ object SceneScriptManager {
             if (script.canResume()) {
                 script.isStarted = true
                 currentServer.coroutineScope.launch {
-                    script.stateMachine.start()
+                    script.stateMachine.activate()
                     stopScene(file)
                 }
             }
@@ -76,7 +76,7 @@ object SceneScriptManager {
 
             try {
                 val script = result.valueOrThrow().returnValue.scriptInstance as SceneScript
-                script.stateMachine.currentState = state
+                script.stateMachine.initialState = state
                 SCRIPTS[file] = script
             } catch (e: Exception) {
                 HollowCore.LOGGER.error("Exception while starting script $file: ", e)

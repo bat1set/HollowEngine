@@ -1,8 +1,6 @@
 package ru.hollowhorizon.hollowengine.common.fsm
 
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.serializer
@@ -17,7 +15,6 @@ import ru.hollowhorizon.hollowengine.common.scripting.story.functions.getLevel
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -27,7 +24,7 @@ class StateStorage(val tag: CompoundTag) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<*> get() = Key
 }
 
-suspend inline fun <reified T : Any> remember(name: String, initializer: () -> T): ReadWriteProperty<Any?, T> {
+suspend inline fun <reified T : Any> remember(name: String, noinline initializer: () -> T): ReadWriteProperty<Any?, T> {
     val tag = coroutineContext[StateStorage]?.tag ?: error("StateStorage not found!")
     val variable =
         if (name in tag) NBTFormat.deserialize<T>(tag.get(name)!!)
@@ -38,7 +35,7 @@ suspend inline fun <reified T : Any> remember(name: String, initializer: () -> T
 
 class RememberValue<T : Any>(
     val name: String,
-    internal var variable: T,
+    var variable: T,
     private val type: KSerializer<T>,
     private val tag: CompoundTag,
 ) : ReadWriteProperty<Any?, T> {
@@ -54,36 +51,37 @@ class RememberValue<T : Any>(
     }
 }
 
-internal suspend inline fun <reified T : Any> rememberList(
+suspend inline fun <reified T : Any> rememberList(
     name: String,
-    initializer: () -> MutableList<T>,
-): RememberValue<MutableList<T>> {
+    noinline initializer: () -> MutableList<T>,
+): ReadWriteProperty<Any?, MutableList<T>> {
     val tag = coroutineContext[StateStorage]?.tag ?: error("StateStorage not found!")
     val variable: MutableList<T> =
-        if (name in tag) NBTFormat.deserialize(tag.get(name)!!)
+        if (name in tag) NBTFormat.deserialize<List<T>>(tag.get(name)!!).toMutableList()
         else initializer()
 
-    val delegate = RememberValue(name, variable, ListSerializer(serializer<T>()) as KSerializer<MutableList<T>>, tag)
-    val list = SyncableListImpl(variable, T::class.java) {
-        delegate.save()
-    }
-    delegate.variable = list
+    @Suppress("UNCHECKED_CAST")
+    val serializer = ListSerializer(serializer<T>()) as KSerializer<MutableList<T>>
+    val delegate = RememberValue(name, variable, serializer, tag)
+    val syncList = SyncableListImpl(variable, T::class.java, delegate::save)
+    delegate.variable = syncList
 
     return delegate
 }
 
-suspend fun <T : LivingEntity> rememberEntity(name: String, initializer: () -> T): T {
+suspend fun <T : LivingEntity> rememberEntity(name: String, initializer: suspend () -> T): T {
     val tag = coroutineContext[StateStorage]?.tag ?: error("StateStorage not found!")
     val server = currentServer
 
-    if (name in tag) {
+    return if (name in tag) {
         val context = tag.getCompound(name)
         val uuid = context.getUUID("uuid")
         val level = server.getLevel(context.getString("level"))
         await { level.getEntity(uuid) != null }
-        return level.getEntity(uuid) as T
+        @Suppress("UNCHECKED_CAST")
+        level.getEntity(uuid) as T
     } else {
-        return initializer().apply {
+        initializer().apply {
             tag.put(name, CompoundTag().apply {
                 putString("level", level().dimension().location().toString())
                 putUUID("uuid", uuid)
@@ -92,20 +90,18 @@ suspend fun <T : LivingEntity> rememberEntity(name: String, initializer: () -> T
     }
 }
 
-private fun waiter(checker: CompletableDeferred<Boolean>, condition: () -> Boolean) {
-    currentServer.coroutineScope.launch {
-        if (condition()) checker.complete(true)
-        else {
-            delay(50L)
-            waiter(checker, condition)
-        }
-    }
-}
-
 suspend fun await(condition: () -> Boolean) {
-    val checker = CompletableDeferred<Boolean>()
-
-    waiter(checker, condition)
-
-    checker.await()
+    if (condition()) return
+    suspendCancellableCoroutine { continuation ->
+        val job = currentServer.coroutineScope.launch {
+            while (continuation.isActive) {
+                if (condition()) {
+                    continuation.resume(Unit)
+                    break
+                }
+                delay(50L)
+            }
+        }
+        continuation.invokeOnCancellation { job.cancel() }
+    }
 }
