@@ -26,6 +26,7 @@ plugins {
 }
 
 include("compiler")
+include("core")
 
 stonecutter {
 
@@ -37,9 +38,11 @@ stonecutter {
 
         rootProject.projectDir.resolve("versions")
             .listFiles()
-            .filter { it.isDirectory }
-            .filter { !it.resolve(".build-ignore").exists() }
-            .forEach { version(it.name) }
+            ?.filter { it.isDirectory }
+            ?.filter { !it.resolve(".build-ignore").exists() }
+            ?.forEach { version(it.name) }
+
+        branch("core")
         branch("compiler")
     }
 }

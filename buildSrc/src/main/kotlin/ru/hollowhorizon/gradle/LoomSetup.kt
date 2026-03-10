@@ -26,7 +26,7 @@ object LoomSetup {
         loom.apply {
             silentMojangMappingsLicense()
             if (modPlatform == "neoforge") generateSrgTiny = false
-            val awFile = project.rootProject.file("src/main/resources/${modProject.modId}.accesswidener")
+            val awFile = project.rootProject.file("core/src/main/resources/${modProject.modId}.accesswidener")
             if (awFile.exists()) accessWidenerPath.set(awFile)
 
             mixin.useLegacyMixinAp.set(true)
